@@ -3,6 +3,17 @@
 # Monika Ingielewicz 150323
 
 
-from funkcje import generuj_macierze_intensywnosci
+from funkcje import *
 
-generuj_macierze_intensywnosci("obrazy")
+
+
+kategoria = ('NANO', 'NANO', 'NANO', 'NANO', 'NANO', 'NANO', 'NANO', 'NANO', 'NANO', 'NANO', 'NANO', 'NANO',
+             'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT', 'PAINT')
+
+mtx = generuj_macierze_intensywnosci("obrazy")
+
+dane = generuj_dane(mtx)
+
+df = generuj_df(kategoria, dane)
+
+print(df.to_string(index=False))
