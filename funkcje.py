@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from PIL import Image
 
+from sklearn.linear_model import LinearRegression
+
+
 
 def generuj_macierze_intensywnosci(param):
     i = 0
@@ -26,7 +29,6 @@ def generuj_macierze_intensywnosci(param):
 
 def suma(photo):
     "funkcja sumujace elementy macierzy (obrazu)"
-
     width_x = photo.shape[0]
     height_y = photo.shape[1]
     s = 0
@@ -81,9 +83,24 @@ def generuj_dane(lista):
 
 
 def generuj_df(kat, lista):
-    df = pd.DataFrame({'1. Obraz': [x[0] + 1 for x in lista],
-                       '2. Kategoria': pd.Categorical(kat),
-                       '3. Jasnosc': [x[1] for x in lista],
-                       '4. Wariancja': [x[2] for x in lista],
-                       '5. Entropia': [x[3] for x in lista]})
+    df = pd.DataFrame({'Obraz': [x[0] + 1 for x in lista],
+                       'Kategoria': pd.Categorical(kat),
+                       'Jasnosc': [x[1] for x in lista],
+                       'Wariancja': [x[2] for x in lista],
+                       'Entropia': [x[3] for x in lista]})
     return df
+
+def uczenie_maszynowe(df, obraz):
+    lr = LinearRegression()
+    lr.fit(df[['Jasnosc', 'Wariancja', 'Entropia']], df['Kategoria'])
+    test = Image.open(obraz).convert("L")
+    matrix = np.asarray(test)
+    test = pd.DataFrame([[brigthness(matrix), variance(matrix), entropy(matrix)]], columns=list('ABC'))
+    wynik = ((lr.predict(test[['A', 'B', 'C']])))
+    if wynik >= 0.5:
+        print('Obraz', obraz, 'jest obrazkiem zrobionym w paincie z dokładnością do', abs(float(wynik)), '%')
+    else:
+        print('Obraz', obraz, 'jest zdjęciem zrobionym zrobionym za pomocą mikroskopu z dokładnością do', abs(float(1-wynik)), '%')
+
+
+
