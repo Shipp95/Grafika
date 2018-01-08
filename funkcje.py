@@ -1,14 +1,15 @@
 import math
 import numpy as np
 import os
-
 import matplotlib.pyplot as plt
 import pandas as pd
 from PIL import Image
-
 from sklearn.linear_model import LinearRegression
 
 
+# funkcja przechodzi do folderu podanego jako parametr, następnie w pętli, pliki z rozszerzeniem .png zostają wczytane do
+# macierzy w trybie "L", to znaczy 8-bitowej skali szarości(wartość piksela = 0-255). Funkcja zwraca listę takich macierzy
+# intensywności. Na koniec funkcja wraca do folderu roboczego, print() daje użytkownikowi znać do którego folderu przeszedł
 
 def generuj_macierze_intensywnosci(param):
     i = 0
@@ -27,8 +28,10 @@ def generuj_macierze_intensywnosci(param):
     return mtx
 
 
+# funkcja pomocnicza, która tworzy pętlę pobierając wymiary obrazu i zliczając wartości każdego piksela. Funkcja zwraca
+# tę sumę
+
 def suma(photo):
-    "funkcja sumujace elementy macierzy (obrazu)"
     width_x = photo.shape[0]
     height_y = photo.shape[1]
     s = 0
@@ -38,14 +41,17 @@ def suma(photo):
     return s;
 
 
-def brigthness(photo: object) -> object:
-    "funkcja licząca jasność dla obrazu"
+# funkcja licząca jasność obrazu
+
+def brigthness(photo):
     width_x = photo.shape[0]
     height_y = photo.shape[1]
     NM = 1 / (width_x * height_y)
     b = NM * suma(photo)
     return b;
 
+
+# funkcja licząca wariancję
 
 def variance(photo):
     "funkcja licząca wariancję obrazu"
@@ -62,6 +68,9 @@ def variance(photo):
     return v;
 
 
+# funkcja licząca entropię. Wykorzystuje utworzony na podstawie obrazu histogram, i pobiera ilość pikseli o danej
+# intensywności do pętli.
+
 def entropy(photo):
     wynik = 0
     n, bins, patches = plt.hist(photo.ravel(), bins=256, normed=1, range=(0.0, 255.0), fc='k', ec='k')
@@ -70,6 +79,8 @@ def entropy(photo):
             wynik -= (value * math.log2(value))
     return wynik
 
+
+# funkcja, która pobiera listę macierzy intensywności i wylicza dla każdego elementu jasność, wariancję i entropię
 
 def generuj_dane(lista):
     dane = list()
@@ -82,6 +93,9 @@ def generuj_dane(lista):
     return dane
 
 
+# funkcja, pobiera dwa argumenty, kat, oraz lista. Parametr kat, przyporządkowuje każdemu obrazowi kategorię 0 lub 1
+# (NANO lub PAINT). Parametr lista, jest listą wygenerowaną przez poprzednią funkcję.
+
 def generuj_df(kat, lista):
     df = pd.DataFrame({'Obraz': [x[0] + 1 for x in lista],
                        'Kategoria': pd.Categorical(kat),
@@ -89,6 +103,15 @@ def generuj_df(kat, lista):
                        'Wariancja': [x[2] for x in lista],
                        'Entropia': [x[3] for x in lista]})
     return df
+
+
+# Funkcja uczenie_maszynowe, przyjmuje 2 argumenty: df oraz obraz. df jest obiektem DataFrame utworzonym za pomocą
+# biblioteki pandas, i na podstawie tego obiektu tworzymy model regresji liniowej. Drugi argument 'obraz' jest to obraz,
+# któremu chcemy przyporządkować kategorię na bazie naszego modelu. Otwieramy go w trybie "L", czyli 8-bitowej skali szarości
+# a następnie tworzymy obiekt DataFrame, z parametrami takimi jak jasność, wariancja oraz entropia. Funkcja następnie porównuje
+# taki obiekt do modelu regresji liniowej i informuje nas do której kategorii należy, oraz jakie jest odchylenie od wzorca.
+# Wartości bliskie 0, oznaczają, że obraz prawdopodobnie został wykonany za pomocą mikroskopu, a wartości bliskie 1,
+# informują nas, że obraz został wykonany w paincie.
 
 def uczenie_maszynowe(df, obraz):
     lr = LinearRegression()
@@ -98,9 +121,7 @@ def uczenie_maszynowe(df, obraz):
     test = pd.DataFrame([[brigthness(matrix), variance(matrix), entropy(matrix)]], columns=list('ABC'))
     wynik = ((lr.predict(test[['A', 'B', 'C']])))
     if wynik >= 0.5:
-        print('Obraz', obraz, 'jest obrazkiem zrobionym w paincie z dokładnością do', abs(float(wynik)), '%')
+        print('Obraz', obraz, 'jest obrazkiem zrobionym w paincie. Odchylenie od wzorca', abs(float(wynik)))
     else:
-        print('Obraz', obraz, 'jest zdjęciem zrobionym zrobionym za pomocą mikroskopu z dokładnością do', abs(float(1-wynik)), '%')
-
-
-
+        print('Obraz', obraz, 'jest zdjęciem zrobionym zrobionym za pomocą mikroskopu. Odchylenie od wzorca',
+              abs(float(wynik)))
